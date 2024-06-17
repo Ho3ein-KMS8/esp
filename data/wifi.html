@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="icon" href="data:;base64,iVBORwOKGO=" />
+        <title>Connect to Wifi</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                width: 100vw;
+                height: 100vh;
+                margin: 0;
+                padding: 0;
+                background-color: black;
+            }
+            a {
+                text-decoration: none;
+            }
+            section {
+                display: flex;
+                flex-direction: column;
+                align-items: center;    
+                width: 100%;
+                background-color: black;
+            }
+            section nav {
+                display: flex;
+                flex-direction: row;
+                justify-content: flex-start;
+                width: 100%;
+                background-color: black;
+                position: fixed;
+                top: 0;
+            }
+            section nav ul {
+                padding: 0;
+                margin: 0;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                list-style: none;
+                margin-left: 2vw;
+            }
+            section nav ul li {
+                padding: 4vh 2vw;
+            }
+            section nav ul li a {
+                text-decoration: none;
+                color: white;
+            }
+            section .settings {
+                color: white;
+                margin-top: 10vh;
+                text-align: center;
+            }
+            #networks {
+                color: white;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+            #networks p {
+                border-bottom: 2px solid gray;
+                width: 50%;
+                color: white;
+                padding: .5rem .3rem;
+                border-radius: .2rem;
+                transition: all .4s linear;
+                cursor: pointer;
+            }
+            #networks p:hover {
+                border-bottom: 2px solid rgb(250, 202, 103);
+                color: rgb(250, 202, 103);
+            }
+            section .settings .wifi-h1 {
+                font-size: 2rem;
+                margin: 4vh 0;
+                margin-top: 10vh;
+            }
+            form {
+                width: 100%;
+                background-color: black;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+            input::placeholder {
+                font-family: sans-serif;
+            }
+            form .inp {
+                background-color: black;
+                border: 2px solid gray;
+                margin-top: 3vh;
+                outline: none;
+                color: white;
+                padding: 1rem 1rem;
+                border-radius: .3rem;
+            }
+            form .inp:focus {
+                border: 2px solid rgb(250, 202, 103);
+            }
+            .submit-btn {
+                width: 73%;
+                margin: .8rem 0;
+                padding: 1rem 0;
+                outline: none;
+                border-radius: .5rem;
+                background-color: black;
+                color: white;
+                border: 1px solid gray;
+                transition: all .3s linear;
+            }
+            .submit-btn:hover {
+                border: 1px solid rgb(250, 202, 103);
+                color: rgb(250, 202, 103);
+                cursor: pointer;
+                box-shadow: rgb(250, 202, 103) 0px 0px 5px 2px;
+            }
+            @media screen and (max-width:300px) {
+                section nav ul {
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    width: 100%;
+                }
+                section .settings {
+                    margin-top: 60vh;
+                }
+                section .settings form {
+                    margin-bottom: 10vh;
+                }
+                section .settings .wifi-h1 {
+                    font-size: 10vw;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <section>
+            <nav>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="wifi">Connect to wifi</a></li>
+                    <li><a href="server">Server settings</a></li>
+                    <li><a href="network">Network settings</a></li>
+                    <li><a href="mqtt">MQTT settings</a></li>
+                </ul>
+            </nav>
+            <div class="settings">
+                <h2 class="wifi-h1">Connect to WIFI</h1>
+                <div id="networks"></div>
+                <section>
+                    <form id="mainForm" method="post" action="/get1">
+                        <input required placeholder="SSID" class="inp" type="text" name="ssid">
+                        <input required placeholder="Password" class="inp" name="password" type="password" />
+                        <input required placeholder="Port" class="inp" name="port" type="number" />
+                        <input class="submit-btn" type="submit" value="Submit">
+                    </form>
+                </section>
+            </div>
+        </section>
+    </body>
+    <script>
+        window.addEventListener("load", readSettings);
+
+        function readSettings() {            
+            fetch('/wifi/scan')
+                .then((response) => response.text())
+                .then((data) => {
+                    let para;
+                    let node;
+                    let editData = "";
+                    let start = 0;
+                    document.getElementById("networks").innerHTML = "";
+                    for(let i = 0; i < data.length; i++) {
+                        if(data[i] == "\r" && data[i+1] == "\n") {
+                            para = document.createElement("p");
+                            para.classList.add("ssid");
+                            para.setAttribute("onclick", "enterSsid(this)");
+                            
+                            editData = "";
+                            for(let j = start; j < i; j++)
+                                editData += data[j];
+
+                            node = document.createTextNode(editData);
+                            para.appendChild(node);
+                            document.getElementById("networks").appendChild(para);
+                            i+=2;
+                            start += i;
+                        }
+                    }
+                })
+        }
+        
+        function enterSsid(t) {
+            let pureText = "";
+            let impureText = t.innerText;
+            
+            let end = impureText[impureText.length-1];
+            if(end == "*")
+                end = impureText.length-3;
+            else
+                end = impureText.length-1;
+
+            for(let i = 0; i < end; i++)
+                pureText += impureText[i];
+
+            document.getElementById("mainForm").firstElementChild.value = pureText;
+        }
+
+        setInterval(() => {
+		    readSettings();
+	    }, 10000);
+
+    </script>
+</html>
